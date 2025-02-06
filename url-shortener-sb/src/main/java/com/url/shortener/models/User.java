@@ -8,6 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 
+/*
+ * Custom version of user model.
+ */
 @Entity
 @Data
 @Table(name = "users")
@@ -21,7 +24,6 @@ public class User {
 	private String password;
 	private String role = "ROLE_USER";
 	
-	/*
 	public Long getId() {
 		return id;
 	}
@@ -46,11 +48,11 @@ public class User {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+	
 	public String getRole() {
 		return role;
 	}
 	public void setRole(String role) {
 		this.role = role;
 	}
-	*/
 }
