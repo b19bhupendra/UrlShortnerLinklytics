@@ -3,7 +3,9 @@ package com.url.shortener.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +20,7 @@ import com.url.shortener.service.UserDetailsServiceImpl;
 
 /*
  * Custom security configuration for our application
+ * @configuration because its our configuration class
  */
 @Configuration
 @EnableWebSecurity
@@ -41,9 +44,19 @@ public class WebSecurityConfig {
 		return new BCryptPasswordEncoder();
 	}
 	
+	/**
+	 * Bean for authenticationManager
+	 * @return
+	 * @throws Exception 
+	 */
+	@Bean
+	public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+		return authenticationConfiguration.getAuthenticationManager();
+	}
+	
 	
 	/*
-	 * Configure DaoAuthenticationProvider:
+	 * b.Configure DaoAuthenticationProvider:
 	 * 1.Sets up how authentication is handled by Spring security
 	 * 2.Bean for AuthenticationManager and PasswordEncoder
 	 */
@@ -51,6 +64,7 @@ public class WebSecurityConfig {
 	public DaoAuthenticationProvider authenticationProvider() {
 		//Instance of DaoAuthenticationProvider
 		DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+		//userDetailsService which defines how information is fetched
 		authProvider.setUserDetailsService(userDetailsService);
 		authProvider.setPasswordEncoder(passwordEncoder());
 		return authProvider;
@@ -61,7 +75,7 @@ public class WebSecurityConfig {
 	
 	
 	/*
-	 * Custom security configuration
+	 * a.Custom security configuration
 	 * 
 	 * Configure JwtAuthenticationFilter in FilterChain : 
 	 * 1. Spring Security recognizes it as a filter chain
@@ -74,8 +88,9 @@ public class WebSecurityConfig {
 	 * @Return : Object of type security filter chain
 	 */
 	
+	@Bean // if we miss this annotation then entire method won't be picked up it will be ignored
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
-		http.csrf(AbstractHttpConfigurer::disable)
+		http.csrf(AbstractHttpConfigurer::disable) //CSRF : Protection
 			.authorizeHttpRequests(auth -> auth
 					.requestMatchers("/api/auth/**").permitAll()
 					.requestMatchers("/api/urls/**").authenticated()
@@ -90,8 +105,10 @@ public class WebSecurityConfig {
 		 * Also setting authenticationProvider
 		 */
 		http.authenticationProvider(authenticationProvider());
+		//Spring security knows jwtAuthenticationFilter need to be excuted only once but it does not know where in security filter 
+		//chain so addFilterBefore 
 		http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
-		return http.build();
+		return http.build(); // return the object of type security filter chain
 	}
 
 }
