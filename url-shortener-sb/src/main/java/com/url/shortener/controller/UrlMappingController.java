@@ -1,10 +1,13 @@
 package com.url.shortener.controller;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,11 +28,19 @@ public class UrlMappingController {
 	private UrlMappingService urlMappingService;
 	private UserService userService;
 	
+    // ✅ Constructor injection (Spring will auto-wire beans)
+    public UrlMappingController(UrlMappingService urlMappingService, UserService userService) {
+        this.urlMappingService = urlMappingService;
+        this.userService = userService;
+    }
+    
 	/**
 	 * @param Accepts Map of String , String we call this as request 
 	 * @param Also we accept the object of type principal , this principal object is auto injected 
 	 * 
 	 * {"key":"value"} => {"originalUrl" : "https://example.com"}
+	 * 
+	 * https://base.com/Qf65YTpi ---redirect---> https://example.com  (TODO :  redirection logic)
 	 * 
 	 * We have not added any authentication related information but we can add annotation of PreAuthorized so 
 	 * this will take care of the authentication part.
@@ -42,6 +53,8 @@ public class UrlMappingController {
 		String originalUrl = request.get("originalUrl");// this is how we get data 
 		
 		/*
+		 * Getting the USER
+		 * 
 		 * 	We need access to userService because we need to get the user object 
 			and we need user object because every url i.e being created is being associated with user in the database 
 			and it associated with user because if not then we don't know who created this url 
@@ -58,6 +71,25 @@ public class UrlMappingController {
 		
 	}
 	
+	/**
+	 * EndPoint that will helpUs to get all the urls per particular user 
+	 * Principal is a Java interface that represents the currently authenticated user.
+	 * principal.getName() → gives you the username of the logged-in user.
+	 * 
+	 * And this api will be used in frontedn to display url that user has shortend based on logged in use 
+	 */
+	@GetMapping("/myUrls")
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<List<UrlMappingDTO>> getUserUrls(Principal principal){
+		
+		//First Getting the user 
+		User user = userService.findByUsername(principal.getName());
+		
+		//Then getting urls for a particular user using this service class
+		List<UrlMappingDTO> urls = urlMappingService.getUrlsByUser(user);
+		
+		return ResponseEntity.ok(urls);
+	}
 
 }
 

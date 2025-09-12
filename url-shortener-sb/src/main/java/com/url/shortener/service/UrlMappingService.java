@@ -1,7 +1,11 @@
 package com.url.shortener.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.url.shortener.dtos.UrlMappingDTO;
@@ -15,6 +19,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor	
 public class UrlMappingService {
 	
+	@Autowired
 	private UrlMappingRepository urlMappingRepository;
 	/**
 	 * @Method : Here will be the actual login of creating the short url
@@ -39,7 +44,7 @@ public class UrlMappingService {
 		
 		// we will return when returning we will need to send the object of type UrlMappingDTO
 		// and urlMAppingDTO have the slightly different structure so we will have seprate method
-		return convertToDto(urlMapping);
+		return convertToDto(savedUrlMapping);
 	}
 	
 	/**
@@ -61,9 +66,44 @@ public class UrlMappingService {
 		return urlMappingDTO;
 	}
 
+	/**
+	 * Logic for generating short url : First we will have lenght of the short url set to 8 
+	 * and then we will generate any random character and we will apend it until the lenght is 8 that is the simple logic that we will apply 
+	 * 
+	 * @return
+	 */
 	private String generateShortUrl() {
+		
+		//List of characters from where the random letters are being generated;
+		String characters = "ABCDEFGHIJKLMNOPQRSTUVWQYZabcdefghijklmnopqrstuvwxyz0123456789";
+		
+		Random random = new Random();
+		
+		//using StringBuilder
+		StringBuilder shortUrl = new StringBuilder(8);
+		
+		for(int i = 0; i<8; i++) {
+			shortUrl.append(characters.charAt(random.nextInt(characters.length())));
+		}
+		
+		//Converting shortUrl of type stringbuilder to String using toString
+		return shortUrl.toString();
+	}
 
-		return "";
+	/**
+	 * 
+	 * @param user
+	 * @return UrlMappingDTO
+	 */
+	public List <UrlMappingDTO> getUrlsByUser(User user) {
+
+		/* this returns the list of url mapping but we need a list of urlMappingDTO 
+			so for every mapping in the list we are maping every item to DTO (converting) 
+			then collecting as list  and returning
+		*/
+		return urlMappingRepository.findByUser(user).stream()
+				.map(this::convertToDto) //Converting all the object to DTO so calling convertToDto method
+				.toList();// Then collecting as a list\
 	}
 
 }
