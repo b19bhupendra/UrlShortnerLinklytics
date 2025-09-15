@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import javax.management.RuntimeErrorException;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.url.shortener.service.UserDetailsImpl;
 
@@ -16,10 +17,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 
 /*
  * This is the file that will have all the utility helper method that our application going to need
  */
+@Component
 public class JwtUtils {
 
 	/*
@@ -27,8 +30,9 @@ public class JwtUtils {
 	 */
 	@Value("${jwt.secret}")
 	private String jwtSecret;
+	
 	@Value("${jwt.expiration}")
-	private int jwtExpirationsMs;
+	private long jwtExpirationsMs;
 	
 	/*
 	 * Authorization -> Bearer <TOKEN>
