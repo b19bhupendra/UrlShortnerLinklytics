@@ -20,8 +20,8 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
 	
 	//There will be scnerios where we searching a record by shortUrl
 	UrlMapping findByShortUrl(String shortUrl);
-	
-	//All the url of particular user
+	 
+	//All the url of particular user so we are able to get the urlmappings by user
 	List<UrlMapping> findByUser(User user);
 	
 
