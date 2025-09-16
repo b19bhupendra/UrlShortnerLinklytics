@@ -1,16 +1,21 @@
 package com.url.shortener.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.url.shortener.dtos.ClickEventDTO;
 import com.url.shortener.dtos.UrlMappingDTO;
+import com.url.shortener.models.ClickEvent;
 import com.url.shortener.models.UrlMapping;
 import com.url.shortener.models.User;
+import com.url.shortener.repository.ClickEventRepository;
 import com.url.shortener.repository.UrlMappingRepository;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +26,9 @@ public class UrlMappingService {
 	
 	@Autowired
 	private UrlMappingRepository urlMappingRepository;
+	
+	@Autowired
+	private ClickEventRepository clickEventRepository;
 	/**
 	 * @Method : Here will be the actual login of creating the short url
 	 * @param originalUrl
@@ -106,4 +114,80 @@ public class UrlMappingService {
 				.toList();// Then collecting as a list\
 	}
 
+	/**
+	 * 	
+	 * Looking up the URL mapping
+	 * Fetching click events from DB
+	 * Grouping clicks by day
+	 * Counting them
+	 * Returning a list of DTOs
+	 * ---------------------------------------------------------------------
+	 * We will make use of shortUrl to get the urlMapping First
+	 * And We will get the whatever clickEvent has been recorded against that particular urlMapping we will get that
+	 * Because to get the clickEvent we need to the urlMappingId and urlMappingId can be find in urlMapping Table
+	 * @param shortUrl
+	 * @param start
+	 * @param end
+	 * @return
+	 */
+	public List<ClickEventDTO> getClickEventsByDate(String shortUrl, LocalDateTime start, LocalDateTime end) {
+		
+		UrlMapping urlMapping = urlMappingRepository.findByShortUrl(shortUrl);
+		
+		
+		if(urlMapping!=null) {
+			//if not equal to null then we need to find the urlMapping and the clickDate b/w start and end
+			//from the clickEvent Repository
+			//This will returnt the List of click events but we expected to return the ClickEventDTO type so we can
+			//convert this list into stream 
+			return clickEventRepository.findByUrlMappingAndClickDateBetween(urlMapping, start, end).stream()
+					//First convert this into stream and
+					//grouping the data by the click date 
+					.collect(Collectors.groupingBy(
+						    click -> click.getClickDate().toLocalDate(), 
+						    Collectors.counting()))
+					.entrySet().stream()
+						.map(entry -> {
+							ClickEventDTO clickEventDTO = new ClickEventDTO();
+							// transformation code 
+							clickEventDTO.setClickDate(entry.getKey());
+							clickEventDTO.setCount(entry.getValue());
+							return clickEventDTO;
+					})
+					.collect(Collectors.toList());
+		}
+		return null;
+	}
+	
+	/**
+	 * 
+	 * @param user
+	 * @param start
+	 * @param end
+	 * @return
+	 */
+	public Map<LocalDate, Long> getTotalClicksByUserAndDate(User user, LocalDate start, LocalDate end) {
+		//Getting the urlMappings by the users 
+		//We need to share the list of urlMApping in the user account that belongs to the user so,
+		//Getting all the urlMapping of that particular user
+		List<UrlMapping> urlMappings = urlMappingRepository.findByUser(user);
+		
+		//List of clickEvents
+		//end Date 1 one day = until next day 12 am
+		List<ClickEvent> clickEvents = clickEventRepository.findByUrlMappingInAndClickDateBetween(urlMappings, start.atStartOfDay(), end.plusMonths(1).atStartOfDay());                                  
+		
+		return clickEvents.stream()
+				.collect(Collectors.groupingBy(click -> click.getClickDate().toLocalDate(), Collectors.counting()));
+	}
 }
+
+
+
+
+
+
+
+
+
+
+

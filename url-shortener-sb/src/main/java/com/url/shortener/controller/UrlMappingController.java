@@ -1,18 +1,26 @@
 package com.url.shortener.controller;
 
 import java.security.Principal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.url.shortener.dtos.ClickEventDTO;
 import com.url.shortener.dtos.UrlMappingDTO;
 import com.url.shortener.models.User;
 import com.url.shortener.service.UrlMappingService;
@@ -28,7 +36,10 @@ public class UrlMappingController {
 	private UrlMappingService urlMappingService;
 	private UserService userService;
 	
-    // ✅ Constructor injection (Spring will auto-wire beans)
+    private static final Logger logger = LoggerFactory.getLogger(UrlMappingController.class);
+
+	
+    // Constructor injection (Spring will auto-wire beans)
     public UrlMappingController(UrlMappingService urlMappingService, UserService userService) {
         this.urlMappingService = urlMappingService;
         this.userService = userService;
@@ -90,8 +101,79 @@ public class UrlMappingController {
 		
 		return ResponseEntity.ok(urls);
 	}
+	
+	
+
+	/**
+	 * @Method This request helps us to get the analytics for a particular shortUrl within a particular date range.
+	 * @param shortUrl
+	 * @param startDate
+	 * @param endDate
+	 * @return
+	 */
+	@GetMapping("/analytics/{shortUrl}")
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<List<ClickEventDTO>> getUrlAnalytics(@PathVariable String shortUrl, 
+															@RequestParam("startDate") String startDate,
+															@RequestParam("endDate") String endDate){
+														
+		
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;// example : 2024-12-01T00:00:00
+		
+		//Converting startDate and lastDate in our localDate and Time object
+		LocalDateTime start = LocalDateTime.parse(startDate, formatter);
+		LocalDateTime end = LocalDateTime.parse(endDate, formatter);
+		//This will give list of click events dto
+		List<ClickEventDTO> clickEventDTOS = urlMappingService.getClickEventsByDate(shortUrl, start, end);
+		
+		return ResponseEntity.ok(clickEventDTOS);
+	}
+	
+	/**
+	 * We need user here because here we need total clicks for all the urls that user owns so here we need to know who the user is.
+	 * that is why we want principal here.
+	 * @param principal
+	 * @return
+	 */
+	@GetMapping("/totalClicks")
+	@PreAuthorize("hasRole('USER')")
+	public ResponseEntity<Map<LocalDate, Long>> getTotalClicksByDate(Principal principal,
+												@RequestParam("startDate") String startDate,
+												@RequestParam("endDate") String endDate){
+		
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;// example : 2024-12-01T00:00:00
+		
+		User user = userService.findByUsername(principal.getName());
+		//Converting startDate and lastDate in our localDate and Time object
+		LocalDate start = LocalDate.parse(startDate, formatter);
+		LocalDate end = LocalDate.parse(endDate, formatter);
+		
+		//This will give Map of total clicks
+		Map <LocalDate, Long> totalClicks = urlMappingService.getTotalClicksByUserAndDate(user, start, end);
+		
+		return ResponseEntity.ok(totalClicks);
+	
+	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
