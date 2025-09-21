@@ -179,6 +179,34 @@ public class UrlMappingService {
 		return clickEvents.stream()
 				.collect(Collectors.groupingBy(click -> click.getClickDate().toLocalDate(), Collectors.counting()));
 	}
+
+	/**
+	 * @Method : This method return the urlMapping for this shortUrl and 
+	 * we are updating the total clickCount at the urlLevel 
+	 * and then saving the individual clickCounts object in the clickEvent table
+	 *  
+	 * @param shortUrl
+	 * @return
+	 */
+	public UrlMapping getOriginalUrl(String shortUrl) {		
+		UrlMapping urlMapping = urlMappingRepository.findByShortUrl(shortUrl);
+		
+		//When the click event happens we have to record that and save it in clickEvent Table.
+		//For that we go in if 
+		if(urlMapping!=null) {
+			//So whatever the current click count is there we will increase by one
+			urlMapping.setClickCount(urlMapping.getClickCount() + 1);
+			//once clickCount is increased we save
+			urlMappingRepository.save(urlMapping);
+			
+			//Now we have to record the individual clickEvent as well 
+			ClickEvent clickEvent = new ClickEvent();
+			clickEvent.setClickDate(LocalDateTime.now());
+			clickEvent.setUrlMapping(urlMapping);
+			clickEventRepository.save(clickEvent);	
+		}
+		return urlMapping;
+	}
 }
 
 
