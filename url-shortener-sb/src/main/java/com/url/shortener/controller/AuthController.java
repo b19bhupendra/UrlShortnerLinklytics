@@ -54,6 +54,7 @@ public class AuthController {
 		userService.registerUser(user);
 		return ResponseEntity.ok("User Registered Successfully");
 	}
+
 	
 	
 	/*
@@ -61,6 +62,8 @@ public class AuthController {
 	 */
 	@PostMapping("/public/login")
 	public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest){
+		System.out.println("loginRequest-> "+ loginRequest);
+
 		//Now we need to authenticate the user so for that we are going to make use of our service class i.e userService. 
 		
 		return ResponseEntity.ok(userService.authenticateUser(loginRequest));
