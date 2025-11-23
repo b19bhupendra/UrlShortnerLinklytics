@@ -77,6 +77,7 @@ public class UserService {
 		UserDetailsImpl userDetails = (UserDetailsImpl)authentication.getPrincipal(); //this will need some typeCasting
 		//we need instance of jwtUtils here
 		String jwt = jwtUtils.generateToken(userDetails);
+		System.out.println("log-> "+ jwt);
 		//return the object of jwtAuthenticationResponse to controller
 		return new JwtAuthenticationResponse(jwt);
 		
